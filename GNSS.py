@@ -1,44 +1,54 @@
 from machine import UART
 import network, time
 from machine import Pin
+#from machine import Timer
 import ujson
 import urequests
 from tftlcd import LCD32
+from touch import XPT2046
+import gui
 
 RED = (255,0,0)
 GREEN = (0,255,0)
 BLUE = (0,0,255)
 BLACK = (0,0,0)
 WHITE = (255,255,255)
-d = LCD32(portrait=1)
-d.fill(BLACK)
+GREY = (178,180,181)
+remainder = b''
+Buffer = []
+waitForDollar = True
+plusTop = 284
+plusLeft = 224
+plusBottom = plusTop + 15
+plusRight = plusLeft + 15
+minusTop = 0
+minusLeft = 224
+minusBottom = minusTop + 15
+minusRight = minusLeft + 15
+
+d = LCD32(portrait=3)
+time.sleep(1)
+d.fill(GREY)
+t = XPT2046(portrait=3)
+
 lastLatitude = 0.0
 lastLongitude = 0.0
-KEY=Pin(0, Pin.IN, Pin.PULL_UP) #构建KEY对象
 zoom=12
-My_APY_Key="xxxxxxxxxx"
-#MapQuest API Key
-#https://developer.mapquest.com/plan_purchase/steps/business_edition/business_edition_free/register
-#免費加入,一個月15萬筆交易  
+My_API_Key = "xxxxxxxxx"
 
 def displayTime(t):
     global d
-    d.printStr('Time: '+t, 0, 300, BLUE, size=1)
+    d.printStr('Time: '+t, 0, 304, BLUE, size=1)
 def displayDate(t):
     global d
-    d.printStr(t, 120, 300, BLUE, size=1)
+    d.printStr(t, 120, 304, BLUE, size=1)
 
-def getMap(lat, p0, long, p1):
-    if p0==b'S':
-        lat = lat * -1
-        if p1==b'W':
-            long = long * -1
+def drawMap(lat, long):
     url = 'https://www.mapquestapi.com/staticmap/v5/map?key=USEYOUROWNKEY&center=xxLATxx,xxLONGxx&size=240,340&zoom=xxZOOMxx&size=@2x&locations=xxLATxx,xxLONGxx|marker-start'
     url = url.replace('xxLONGxx', str(long), 2)
     url = url.replace('xxLATxx', str(lat), 2)
-    url = url.replace('USEYOUROWNKEY', My_APY_Key)
-    url = url.replace('xxZOOMxx', zoom)
-    print(url)
+    url = url.replace('USEYOUROWNKEY', My_API_Key)
+    url = url.replace('xxZOOMxx', str(zoom))
     re=urequests.get(url)
     print("getMap: "+str(re.status_code))
     if re.status_code == 200:
@@ -46,11 +56,19 @@ def getMap(lat, p0, long, p1):
             fp.write(re.content)
             fp.close()
         d.Picture(0, 0, "/image.jpg")
-    else:
-        print("Couldn't load map!")
     re.close()
     for y in range(300,320):
-        d.drawLine(0,y,240,y, BLACK) #顯示日期和時間嘅空間
+        d.drawLine(0, y, 240, y, GREY)
+
+def getMap(lat, p0, long, p1):
+    global My_API_Key, lastLatitude, lastLongitude
+    if p0==b'S':
+        lat = lat * -1
+        if p1==b'W':
+            long = long * -1
+    lastLatitude = lat
+    lastLongitude = long
+    drawMap(lat, long)
 
 def parseDegrees(term):
   value = float(term) / 100.0
@@ -126,8 +144,6 @@ def parseGSV(result):
 
 def WIFI_Connect():
     with open('wifisecret.json') as fp:
-        #{"SSID":"01Studio", "pwd":"88888888"}
-        #請填表你嘅網絡名同密碼
         data = ujson.loads(fp.read())
     fp.close()
     
@@ -160,23 +176,25 @@ def WIFI_Connect():
 uart=UART(1, 9600, rx=9, tx=8)
 print("Starting wifi...")
 WIFI_Connect()
-
-#先顯示北京地圖 :-)
+#re=urequests.get('http://10.0.1.3/~dda/Vinosearch/assets/img/portfolio/1.jpg')
+#re=urequests.get('https://www.mapquestapi.com/staticmap/v5/map?key=sTrRhK8yf4yDrB5r2BIGprc3l3bwgbWd&center=39.871962,116.400928&size=240,340&zoom=12&size=@2x&locations=39.871962,116.400928|marker-start')
 getMap(39.871962, b'N', 116.400928, b'E')
-remainder = b''
-Buffer = []
-waitForDollar = True
+#tim_flag = 0
+
+#def count(tim):
+    #global tim_flag
+    #tim_flag = 1
+
+#构建软件定时器，编号1
+#tim = Timer(1)
+#tim.init(period=20, mode=Timer.PERIODIC,callback=count) #周期为20ms
+
 while True:
-    if KEY.value()==0: #按键被按下
-        time.sleep_ms(10) #消除抖动
-        if KEY.value()==0: #确认按键被按下
-            zoom = zoom + 1
-            if zoom > 14:
-                zoom = 10
-            print('zoom: '+str(zoom))
-            while not KEY.value(): #检测按键是否松开
-                pass
-            lastLatitude = 0.0
+    #执行按钮触发的任务
+    #if tim_flag == 1:
+        #t.tick_inc()
+        #gui.task_handler()
+        #tim_flag = 0
     if uart.any():
         #print("Incoming!")
         text = remainder
