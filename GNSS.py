@@ -149,8 +149,8 @@ def WIFI_Connect():
     
     WIFI_LED=Pin(2, Pin.OUT) #初始化WIFI指示灯
     wlan = network.WLAN(network.STA_IF) #STA模式
-    wlan.active(True)                   #激活接口
-    start_time=time.time()              #记录时间做超时判断
+    wlan.active(True) #激活接口
+    start_time=time.time() #记录时间做超时判断
     if not wlan.isconnected():
         print('connecting to network...')
         wlan.connect(data['SSID'], data['pwd']) #输入WIFI账号密码
@@ -176,25 +176,9 @@ def WIFI_Connect():
 uart=UART(1, 9600, rx=9, tx=8)
 print("Starting wifi...")
 WIFI_Connect()
-#re=urequests.get('http://10.0.1.3/~dda/Vinosearch/assets/img/portfolio/1.jpg')
-#re=urequests.get('https://www.mapquestapi.com/staticmap/v5/map?key=sTrRhK8yf4yDrB5r2BIGprc3l3bwgbWd&center=39.871962,116.400928&size=240,340&zoom=12&size=@2x&locations=39.871962,116.400928|marker-start')
 getMap(39.871962, b'N', 116.400928, b'E')
-#tim_flag = 0
-
-#def count(tim):
-    #global tim_flag
-    #tim_flag = 1
-
-#构建软件定时器，编号1
-#tim = Timer(1)
-#tim.init(period=20, mode=Timer.PERIODIC,callback=count) #周期为20ms
 
 while True:
-    #执行按钮触发的任务
-    #if tim_flag == 1:
-        #t.tick_inc()
-        #gui.task_handler()
-        #tim_flag = 0
     if uart.any():
         #print("Incoming!")
         text = remainder
@@ -236,4 +220,3 @@ while True:
                     parseRMC(chunks)
                 else:
                     print(x)
-        #print("Buffer empty")
